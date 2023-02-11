@@ -1,0 +1,10 @@
+# IDE artifacts
+.vscode/
+
+# Tool artifacts
+__pycache__/
+
+# Build/baserom artifacts
+*.bin
+*.elf
+build/
