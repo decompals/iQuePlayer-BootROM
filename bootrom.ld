@@ -1,47 +1,53 @@
 OUTPUT_ARCH(mips)
 ENTRY(COLD_RESET)
 
-COLD_RESET_ADDR = 0xBFC00000;
-SRAM_ADDR_UNCACHED = 0xBFC40000;
-SRAM_ADDR_CACHED = 0x9FC40000;
+MEMORY {
+    bin : ORIGIN = 0, LENGTH = 0x2000
+    rom (rx) : ORIGIN = 0xBFC00000, LENGTH = 0x2000
+    sram_uc (rwx) : ORIGIN = 0xBFC40000, LENGTH = 0x8000
+    sram_c (rwx) : ORIGIN = 0x9FC40000, LENGTH = 0x8000
+}
 
 SECTIONS {
-    _Pos = 0;
 
-	.text.startup.0 COLD_RESET_ADDR : AT(_Pos)
+	.text.startup.0 :
 	{
 		PROVIDE(COLD_RESET = .);
 		build/src/boot1.o(.text*)
-	}
-    _Pos += SIZEOF(.text.startup.0);
+	} > rom AT> bin
 
-    STAGE2_ROMSTART = ADDR(.text.startup.0) + _Pos;
-    .text.startup.1 SRAM_ADDR_UNCACHED : AT(_Pos)
+    STAGE2_ROM_START = .;
+
+    .text.startup.1 :
     {
         build/src/boot2.o(.text*)
-    }
-    _Pos += SIZEOF(.text.startup.1);
-    .text SRAM_ADDR_CACHED + SIZEOF(.text.startup.1) : AT(_Pos)
+    } > sram_uc AT> bin
+
+    /* Pick up in the cached segment where the prior uncached code ended */
+
+    .text (. & 0x1FFFFFFF | 0x80000000) :
     {
         build/src/boot3.o(.text*)
         build/src/boot4.o(.text*)
         build/src/sha1.o(.text*)
-    }
-    _Pos += SIZEOF(.text);
-    .data : AT(_Pos)
+    } > sram_c AT> bin
+
+    .data :
     {
         build/src/boot4.o(.data*)
         build/src/sha1.o(.data*)
-    }
-    _Pos += SIZEOF(.data);
-    .rodata : AT(_Pos)
+    } > sram_c AT> bin
+
+    .rodata :
     {
         build/src/boot4.o(.rodata*)
         build/src/sha1.o(.rodata*)
-    }
-    _Pos += SIZEOF(.rodata);
-    STAGE2_END = SRAM_ADDR_UNCACHED + _Pos - SIZEOF(.text.startup.0);
-    STAGE2_END_CACHED = SRAM_ADDR_CACHED + _Pos - SIZEOF(.text.startup.0);
+    } > sram_c AT> bin
+
+    /* Back to uncached for end symbol */
+    STAGE2_END = (. & 0x1FFFFFFF | 0xA0000000);
+
+    _gp = .;
 
 	/DISCARD/ :
 	{

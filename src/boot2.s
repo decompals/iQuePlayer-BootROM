@@ -4,7 +4,7 @@
 
 .text
 
-LEAF(LABEL_BFC40000) // 0xBFC40000
+LEAF(LABEL_BFC40000)
     mfc0    t1, C0_CONFIG
     and     t1, ~CONFIG_K0  // Cache is used in KSEG0
     and     t1, ~CONFIG_CU  // Update on Store Conditional
@@ -35,20 +35,28 @@ LEAF(LABEL_BFC40000) // 0xBFC40000
 
     RDB_WRITE_REG(t3)
 
-    and     t1, t1, 0x700
+    // Read bits [10:8] from MI_10_REG
+    and     t1, t1, (7 << 8)
     srl     t1, t1, 8
-    and     t3, t3, 0x1C00000
-    srl     t3, t3, 0x16
 
+    // Read bits [24:22] from PI_60_REG
+    and     t3, t3, (7 << 22)
+    srl     t3, t3, 22
+
+    // Step over if these match
     beq     t1, t3, 1f
 
-    ori     t4, t4, 0x800
-    sll     t3, t3, 0x8
+    // Set bit 11 for MI_10_REG
+    ori     t4, t4, (1 << 11)
+    // Add in the bits extracted from PI_60_REG at [10:8]
+    sll     t3, t3, 8
     or      t4, t4, t3
 
     RDB_WRITE_16(0x20)
     RDB_WRITE_REG(t4)
 
+    // Write to MI_10_REG
+    // Based on RDB traces captured from test points on the board, this store triggers a reboot of the system?
     sw      t4, (t0)
     nop
 1:
@@ -95,12 +103,12 @@ LEAF(LABEL_BFC40000) // 0xBFC40000
      addiu  t0, t0, (8 * DCACHE_LINESIZE)
 .set reorder
 
-    // set up stack and gp, jump to cached memory region
+    // Set up stack and gp, jump to cached memory region
 
     la      sp, PHYS_TO_K0(0x1FC40000) + 0x8000 - FRAMESZ(SZREG * NARGSAVE)
-    la      gp, STAGE2_END_CACHED
+    la      gp, _gp
     la      t0, LABEL_9FC401F0
-    and     t0, t0, ~(K1BASE & ~K0BASE) // unnecessary K1 -> K0 conversion?
+    and     t0, t0, ~(K1BASE & ~K0BASE) // Unnecessary K1 -> K0 conversion?
 
     RDB_WRITE_REG(t0)
     nop

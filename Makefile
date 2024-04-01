@@ -41,7 +41,7 @@ $(TARGET): $(ELF)
 	$(OBJCOPY) -O binary --pad-to=0x2000 $< $@
 
 $(ELF): $(O_FILES) bootrom.ld
-	$(LD) -T bootrom.ld -Map build/bootrom.map -o $@
+	$(LD) --emit-relocs -T bootrom.ld -Map build/bootrom.map -o $@
 
 build/src/%.o: src/%.s
 	$(CC) -c -x assembler-with-cpp $< $(ASFLAGS) -o $(@:.o=.temp.o)

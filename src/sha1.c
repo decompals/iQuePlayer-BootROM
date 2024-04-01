@@ -45,7 +45,7 @@ s32 SHA1Result(SHA1Context* ctx, u8* hash) {
         ctx->done = TRUE;
     }
 
-    // write out final hash
+    // Write out final hash
     for (i = 0; i < (s32)sizeof(ctx->digest); i++) {
         hash[i] = ctx->digest[i >> 2] >> ((3 - (i & 3)) * 8);
     }
@@ -100,7 +100,7 @@ void SHA1Transform(SHA1Context* ctx) {
     u32 temp;
     s32 i;
 
-    const u32 sha1_consts[4] = {
+    const u32 SHA1Consts[4] = {
         0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6,
     };
     u32 buf[0x50];
@@ -124,7 +124,7 @@ void SHA1Transform(SHA1Context* ctx) {
     D0prev = ctx->digest[0];
 
     for (i = 0; i < 0x14; i++) {
-        D0 = ROL(D0prev, 5) + ((D1 & D2) | (~D1 & D3)) + D4 + buf[i] + sha1_consts[0];
+        D0 = ROL(D0prev, 5) + ((D1 & D2) | (~D1 & D3)) + D4 + buf[i] + SHA1Consts[0];
         D4 = D3;
         D3 = D2;
         D2 = ROL(D1, 30);
@@ -133,7 +133,7 @@ void SHA1Transform(SHA1Context* ctx) {
     }
 
     for (i = 0x14; i < 0x28; i++) {
-        D0 = ROL(D0, 5) + (D1 ^ D2 ^ D3) + D4 + buf[i] + sha1_consts[1];
+        D0 = ROL(D0, 5) + (D1 ^ D2 ^ D3) + D4 + buf[i] + SHA1Consts[1];
         D4 = D3;
         D3 = D2;
         D2 = ROL(D1, 30);
@@ -142,7 +142,7 @@ void SHA1Transform(SHA1Context* ctx) {
     }
 
     for (i = 0x28; i < 0x3C; i++) {
-        D0 = ROL(D0, 5) + ((D1 & (D2 | D3)) | (D2 & D3)) + D4 + buf[i] + sha1_consts[2];
+        D0 = ROL(D0, 5) + ((D1 & (D2 | D3)) | (D2 & D3)) + D4 + buf[i] + SHA1Consts[2];
         D4 = D3;
         D3 = D2;
         D2 = ROL(D1, 30);
@@ -151,7 +151,7 @@ void SHA1Transform(SHA1Context* ctx) {
     }
 
     for (i = 0x3C; i < 0x50; i++) {
-        D0 = ROL(D0, 5) + (D1 ^ D2 ^ D3) + D4 + buf[i] + sha1_consts[3];
+        D0 = ROL(D0, 5) + (D1 ^ D2 ^ D3) + D4 + buf[i] + SHA1Consts[3];
         D4 = D3;
         D3 = D2;
         D2 = ROL(D1, 30);
@@ -169,26 +169,26 @@ void SHA1Transform(SHA1Context* ctx) {
 
 void SHA1PaddedTransform(SHA1Context* ctx) {
     if ((s32)ctx->block_size >= SHA1_BLOCK_MAX_SIZE - 8) {
-        // not enough space for 8 extra bytes, pad to size and process this block
+        // Not enough space for 8 extra bytes, pad to size and process this block
         ctx->data[ctx->block_size++] = 0x80;
 
-        // pad to full size
+        // Pad to full size
         while ((s32)ctx->block_size < SHA1_BLOCK_MAX_SIZE) {
             ctx->data[ctx->block_size++] = 0;
         }
 
-        // process block
+        // Process block
         SHA1Transform(ctx);
 
-        // pad to full size, leaving room for 8 bytes
+        // Pad to full size, leaving room for 8 bytes
         while ((s32)ctx->block_size < SHA1_BLOCK_MAX_SIZE - 8) {
             ctx->data[ctx->block_size++] = 0;
         }
     } else {
-        // there is enough space for 8 extra bytes
+        // There is enough space for 8 extra bytes
         ctx->data[ctx->block_size++] = 0x80;
 
-        // pad to full size, leaving room for 8 bytes
+        // Pad to full size, leaving room for 8 bytes
         while ((s32)ctx->block_size < SHA1_BLOCK_MAX_SIZE - 8) {
             ctx->data[ctx->block_size++] = 0;
         }
